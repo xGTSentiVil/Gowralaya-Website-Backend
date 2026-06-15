@@ -10,6 +10,9 @@ const contactSchema = z.object({
 // Allowed frontend origins
 const ALLOWED_ORIGINS = [
   'https://srigowralaya.vercel.app',
+  'https://srigowralayabuilders.vercel.app',
+  'srigowralayabuilders.in',
+  'https://srigowralayabuilders.in',
   'http://localhost:5173',
   'http://localhost:5174',
 ];
