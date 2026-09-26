@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { corsHeaders as buildCorsHeaders } from '@/lib/cors';
 
 const contactSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100),
@@ -7,33 +8,16 @@ const contactSchema = z.object({
   message: z.string().min(1, 'Message is required').max(2000),
 });
 
-// Allowed frontend origins
-const ALLOWED_ORIGINS = [
-  'https://srigowralaya.vercel.app',
-  'https://srigowralayabuilders.vercel.app',
-  'srigowralayabuilders.in',
-  'https://srigowralayabuilders.in',
-  'http://localhost:5173',
-  'http://localhost:5174',
-];
-
 // The company WhatsApp number (update this)
 const WHATSAPP_PHONE = process.env.WHATSAPP_PHONE || '919841137507';
 const CONTACT_EMAIL = process.env.CONTACT_EMAIL || 'sreegowralaya@gmail.com';
 
-function getCorsHeaders(request: NextRequest) {
-  const origin = request.headers.get('origin') || '';
-  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
-  return {
-    'Access-Control-Allow-Origin': allowedOrigin,
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Max-Age': '86400',
-  };
-}
+/** Visitor text goes into an HTML email, so it must not be able to inject markup. */
+const escapeHtml = (s: string) =>
+  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 export async function POST(request: NextRequest) {
-  const corsHeaders = getCorsHeaders(request);
+  const corsHeaders = buildCorsHeaders(request, 'POST, OPTIONS');
 
   try {
     const body = await request.json();
@@ -67,7 +51,7 @@ export async function POST(request: NextRequest) {
         await resend.emails.send({
           from: 'Website Contact <onboarding@resend.dev>',
           to: CONTACT_EMAIL,
-          subject: `New Website Inquiry from ${name}`,
+          subject: `New Website Inquiry from ${name.replace(/[\r\n]+/g, ' ')}`,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
               <h2 style="color: #3C2415; border-bottom: 2px solid #C9A84C; padding-bottom: 12px;">
@@ -76,15 +60,15 @@ export async function POST(request: NextRequest) {
               <table style="width: 100%; border-collapse: collapse;">
                 <tr>
                   <td style="padding: 12px; font-weight: bold; color: #6B4C3B; border-bottom: 1px solid #EDE4D3;">Name</td>
-                  <td style="padding: 12px; border-bottom: 1px solid #EDE4D3;">${name}</td>
+                  <td style="padding: 12px; border-bottom: 1px solid #EDE4D3;">${escapeHtml(name)}</td>
                 </tr>
                 <tr>
                   <td style="padding: 12px; font-weight: bold; color: #6B4C3B; border-bottom: 1px solid #EDE4D3;">Phone</td>
-                  <td style="padding: 12px; border-bottom: 1px solid #EDE4D3;">${phone}</td>
+                  <td style="padding: 12px; border-bottom: 1px solid #EDE4D3;">${escapeHtml(phone)}</td>
                 </tr>
                 <tr>
                   <td style="padding: 12px; font-weight: bold; color: #6B4C3B; vertical-align: top;">Message</td>
-                  <td style="padding: 12px;">${message}</td>
+                  <td style="padding: 12px; white-space: pre-line;">${escapeHtml(message)}</td>
                 </tr>
               </table>
               <p style="margin-top: 24px; color: #8B7355; font-size: 12px;">
@@ -118,7 +102,7 @@ export async function POST(request: NextRequest) {
 
 // Handle CORS preflight
 export async function OPTIONS(request: NextRequest) {
-  const corsHeaders = getCorsHeaders(request);
+  const corsHeaders = buildCorsHeaders(request, 'POST, OPTIONS');
   return new NextResponse(null, {
     status: 204,
     headers: corsHeaders,
