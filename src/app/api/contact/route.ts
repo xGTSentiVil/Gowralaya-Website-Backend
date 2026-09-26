@@ -9,7 +9,7 @@ const contactSchema = z.object({
 });
 
 // The company WhatsApp number (update this)
-const WHATSAPP_PHONE = process.env.WHATSAPP_PHONE || '919841137507';
+const WHATSAPP_PHONE = process.env.WHATSAPP_PHONE || '916381184146';
 const CONTACT_EMAIL = process.env.CONTACT_EMAIL || 'sreegowralaya@gmail.com';
 
 /** Visitor text goes into an HTML email, so it must not be able to inject markup. */
